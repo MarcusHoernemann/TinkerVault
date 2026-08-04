@@ -78,7 +78,7 @@
             background: none;
             border: none;
             color: var(--text-light);
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
             transition: color 0.2s, border-bottom 0.2s;
@@ -124,7 +124,8 @@
         input[type="text"], 
         input[type="number"], 
         textarea, 
-        input[type="file"] { 
+        input[type="file"],
+        select { 
             width: 100%; 
             padding: 0.875rem 1rem; 
             border: 1px solid var(--border); 
@@ -143,11 +144,16 @@
         }
 
         /* Fokus-Zustand für gute Accessibility */
-        input:focus, textarea:focus {
+        input:focus, textarea:focus, select:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
             background-color: rgba(0,0,0,0.4);
+        }
+        
+        select option {
+            background-color: var(--surface);
+            color: var(--text);
         }
 
         textarea {
@@ -294,6 +300,18 @@
             gap: 1rem;
         }
         
+        .category-badge {
+            display: inline-block;
+            background-color: rgba(99, 102, 241, 0.2);
+            color: var(--primary);
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+        
         @media (max-width: 400px) {
             .row-group {
                 grid-template-columns: 1fr;
@@ -301,6 +319,7 @@
         }
 
         /* --- Styles für die Bestandsliste --- */
+        
         .search-container {
             margin-bottom: 1.5rem;
             position: sticky;
@@ -479,7 +498,7 @@
             color: var(--text-light);
         }
         
-        /* --- Modal (Popup) Styles --- */
+        /* --- Modal (Popup) Styles für Bearbeitung/Löschen/Confirm --- */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -557,16 +576,7 @@
         .btn-danger:hover {
             background-color: rgba(239, 68, 68, 0.1);
         }
-        
-        /* Bestätigungs-Modal (Custom Alert/Confirm) */
-        .confirm-actions {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1.5rem;
-        }
-        .confirm-actions button {
-            margin-top: 0;
-        }
+
     </style>
 </head>
 <body>
@@ -579,6 +589,7 @@
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('listTab', this)">Übersicht</button>
             <button class="tab-btn" onclick="switchTab('addTab', this)">Neu Erfassen</button>
+            <button class="tab-btn" onclick="switchTab('categoryTab', this)">Kategorien</button>
         </div>
         
         <!-- TAB 1: Übersicht & Suche -->
@@ -602,6 +613,13 @@
                 <div class="form-group">
                     <label for="bezeichnung">Bezeichnung</label>
                     <input type="text" id="bezeichnung" required placeholder="z.B. ESP32, PETG Filament rot...">
+                </div>
+                
+                <div class="form-group">
+                    <label for="kategorie">Kategorie <span class="optional-label">optional</span></label>
+                    <select id="kategorie">
+                        <option value="">Keine Kategorie</option>
+                    </select>
                 </div>
                 
                 <div class="row-group">
@@ -636,6 +654,22 @@
                 <button type="submit" id="submitBtn" class="btn-primary">In Datenbank speichern</button>
             </form>
         </div>
+
+        <!-- TAB 3: Kategorien -->
+        <div id="categoryTab" class="tab-content">
+            <div class="form-group">
+                <label for="newCategoryName">Neue Kategorie anlegen</label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="newCategoryName" placeholder="z.B. Filament, Werkzeug..." style="flex: 1;">
+                    <button type="button" class="btn-primary" style="margin-top: 0; width: auto; padding: 0.875rem 1.5rem;" onclick="addCategory()">Hinzufügen</button>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 2rem; font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Meine Kategorien</h3>
+            <div id="categoryList" class="inventory-list" style="margin-top: 1rem;">
+                <div class="loading-spinner">Lade Kategorien...</div>
+            </div>
+        </div>
     </div>
 
     <!-- Modal: Bearbeiten / Löschen -->
@@ -643,7 +677,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 class="modal-title">Bauteil bearbeiten</h2>
-                <button type="button" class="close-modal-btn" onclick="closeModal()">×</button>
+                <button class="close-modal-btn" onclick="closeModal()">×</button>
             </div>
             
             <form id="editItemForm">
@@ -655,6 +689,13 @@
                     <input type="text" id="editBezeichnung" required>
                 </div>
                 
+                <div class="form-group">
+                    <label for="editKategorie">Kategorie</label>
+                    <select id="editKategorie">
+                        <option value="">Keine Kategorie</option>
+                    </select>
+                </div>
+                
                 <div class="row-group">
                     <div class="form-group">
                         <label for="editPreis">Einzelpreis (€) <span class="optional-label">optional</span></label>
@@ -663,7 +704,7 @@
                     
                     <div class="form-group">
                         <label for="editAnzahl">Menge im Bestand</label>
-                        <input type="number" id="editAnzahl" min="0" required>
+                        <input type="number" id="editAnzahl" min="1" required>
                     </div>
                 </div>
                 
@@ -690,14 +731,14 @@
         </div>
     </div>
 
-    <!-- Modal: Custom Confirm (Ersetzt die nativen Browser-Popups) -->
-    <div id="confirmModal" class="modal-overlay" style="z-index: 100;">
-        <div class="modal-content" style="text-align: center; max-width: 400px;">
-            <h2 class="modal-title" style="margin-bottom: 1rem;">Bestätigung</h2>
-            <p id="confirmMessage" style="color: var(--text-light); margin-bottom: 1.5rem;">Möchtest du das wirklich tun?</p>
-            <div class="confirm-actions">
-                <button type="button" id="confirmYesBtn" class="btn-danger">Ja, löschen</button>
-                <button type="button" id="confirmNoBtn" class="btn-outline">Abbrechen</button>
+    <!-- Modal: Eigene Confirm Dialog Box (ersetzt window.confirm) -->
+    <div id="confirmModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+            <h3 style="margin-top: 0;" id="confirmMessage">Bist du sicher?</h3>
+            <div class="row-group" style="margin-top: 1.5rem;">
+                <button class="btn-outline" style="margin: 0;" id="confirmCancelBtn">Abbrechen</button>
+                <button class="btn-danger" style="margin: 0; background-color: var(--error); color: white;" id="confirmOkBtn">Löschen</button>
             </div>
         </div>
     </div>
@@ -708,7 +749,7 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Umgebungsvariablen (werden vom System bereitgestellt)
+        // Umgebungsvariablen
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         let firebaseConfig = {};
         if (typeof __firebase_config !== 'undefined') {
@@ -724,9 +765,10 @@
         const auth = getAuth(app);
         
         let userId = null;
-        let globalInventory = []; // Speichert alle Bauteile im Speicher für die Suche
+        let globalInventory = []; 
+        let globalCategories = []; 
 
-        // Authentifizierung (Anonym, da es eine persönliche Lager App ist)
+        // Authentifizierung
         async function initAuth() {
             try {
                 if (typeof __initial_auth_token !== 'undefined') {
@@ -736,7 +778,8 @@
                     await signInAnonymously(auth);
                 }
                 userId = auth.currentUser.uid;
-                loadInventory(); // Lade Daten erst, wenn eingeloggt
+                loadInventory(); 
+                loadCategories(); 
             } catch (error) {
                 console.error("Auth Fehler:", error);
                 document.getElementById('inventoryList').innerHTML = `<div class="empty-state">Authentifizierungsfehler.<br>${error.message}</div>`;
@@ -745,48 +788,44 @@
 
         initAuth();
 
+        // --- Custom Confirm Box Logik ---
+        function showConfirmModal(message, okText = "Löschen", cancelText = "Abbrechen") {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('confirmModal');
+                const msgEl = document.getElementById('confirmMessage');
+                const btnOk = document.getElementById('confirmOkBtn');
+                const btnCancel = document.getElementById('confirmCancelBtn');
+
+                msgEl.textContent = message;
+                btnOk.textContent = okText;
+                btnCancel.textContent = cancelText;
+
+                modal.classList.add('active');
+
+                btnOk.onclick = () => {
+                    modal.classList.remove('active');
+                    resolve(true);
+                };
+
+                btnCancel.onclick = () => {
+                    modal.classList.remove('active');
+                    resolve(false);
+                };
+            });
+        }
+
         // --- Tab Navigation Logik ---
         window.switchTab = function(tabId, btnElement) {
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             btnElement.classList.add('active');
             
-            // Wenn man auf Übersicht wechselt, Suchfeld leeren und rendern
             if(tabId === 'listTab') {
                 document.getElementById('searchInput').value = '';
                 renderInventoryList(globalInventory);
             }
         };
-
-        // --- Custom Confirm Modal Logik ---
-        let confirmResolver = null;
-        window.showConfirmModal = function(message, yesText = "Ja", noText = "Nein") {
-            return new Promise((resolve) => {
-                document.getElementById('confirmMessage').textContent = message;
-                document.getElementById('confirmYesBtn').textContent = yesText;
-                document.getElementById('confirmNoBtn').textContent = noText;
-                
-                const modal = document.getElementById('confirmModal');
-                modal.classList.add('active');
-                
-                confirmResolver = resolve;
-            });
-        };
-
-        document.getElementById('confirmYesBtn').addEventListener('click', () => {
-            document.getElementById('confirmModal').classList.remove('active');
-            if (confirmResolver) confirmResolver(true);
-        });
-
-        document.getElementById('confirmNoBtn').addEventListener('click', () => {
-            document.getElementById('confirmModal').classList.remove('active');
-            if (confirmResolver) confirmResolver(false);
-        });
 
         // --- Bildverarbeitung Hilfsfunktion ---
         function handleImageSelection(file, canvas, ctx, previewImg, previewContainer, callback) {
@@ -819,8 +858,6 @@
                     canvas.width = width;
                     canvas.height = height;
                     ctx.drawImage(img, 0, 0, width, height);
-
-                    // Komprimieren in JPEG (70% Qualität)
                     const base64String = canvas.toDataURL('image/jpeg', 0.7);
                     
                     previewImg.src = base64String;
@@ -867,7 +904,7 @@
             }
 
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span style="display:inline-block; animation: spin 1s linear infinite;">↻</span> Speichere...';
+            submitBtn.innerHTML = 'Speichere...';
             msg.style.display = 'none';
 
             const preisWert = document.getElementById('preis').value;
@@ -876,6 +913,7 @@
             
             const neuesBauteil = {
                 bezeichnung: document.getElementById('bezeichnung').value,
+                kategorie: document.getElementById('kategorie').value,
                 preis: preisWert ? parseFloat(preisWert) : null,
                 anzahl: sichereMenge,
                 beschreibung: document.getElementById('beschreibung').value,
@@ -923,17 +961,15 @@
                     items.push({ id: doc.id, ...doc.data() });
                 });
                 
-                // Sortieren: Neueste zuerst im lokalen Speicher
                 items.sort((a, b) => new Date(b.angelegtAm) - new Date(a.angelegtAm));
-                
                 globalInventory = items;
                 
-                // Suchfilter anwenden
                 const currentSearch = searchInput.value.toLowerCase().trim();
                 if(currentSearch) {
                     const filtered = globalInventory.filter(item => 
                         item.bezeichnung.toLowerCase().includes(currentSearch) || 
-                        (item.beschreibung && item.beschreibung.toLowerCase().includes(currentSearch))
+                        (item.beschreibung && item.beschreibung.toLowerCase().includes(currentSearch)) ||
+                        (item.kategorie && item.kategorie.toLowerCase().includes(currentSearch))
                     );
                     renderInventoryList(filtered);
                 } else {
@@ -943,55 +979,6 @@
             }, (error) => {
                 console.error("Fehler beim Laden des Bestands:", error);
                 inventoryListContainer.innerHTML = `<div class="empty-state">Fehler beim Laden der Daten.<br>${error.message}</div>`;
-            });
-        }
-
-        // Render Funktion
-        function renderInventoryList(itemsToRender) {
-            inventoryListContainer.innerHTML = '';
-            
-            if (itemsToRender.length === 0) {
-                inventoryListContainer.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📦</div>
-                        <h3>Keine Bauteile gefunden</h3>
-                        <p>Dein Lager ist leer oder die Suche ergab keine Treffer.</p>
-                    </div>
-                `;
-                return;
-            }
-
-            itemsToRender.forEach(item => {
-                const itemEl = document.createElement('div');
-                itemEl.className = 'inventory-item';
-                itemEl.onclick = () => openEditModal(item);
-                
-                let imageHtml = item.fotoDaten 
-                    ? `<img src="${item.fotoDaten}" class="item-image" alt="${item.bezeichnung}">`
-                    : `<div class="item-image">🔧</div>`;
-                
-                const priceHtml = item.preis ? `<p class="item-price">${item.preis.toFixed(2)} €</p>` : '<div></div>';
-                const descHtml = item.beschreibung ? `<p class="item-description">${item.beschreibung}</p>` : '';
-
-                itemEl.innerHTML = `
-                    ${imageHtml}
-                    <div class="item-details">
-                        <div class="item-header">
-                            <h3 class="item-title">${item.bezeichnung}</h3>
-                        </div>
-                        ${descHtml}
-                        <div class="item-footer">
-                            ${priceHtml}
-                            <div class="quantity-controls" onclick="event.stopPropagation()">
-                                <button type="button" class="quantity-btn" onclick="changeQuantity(event, '${item.id}', -1)">-</button>
-                                <span class="quantity-display">${item.anzahl}</span>
-                                <button type="button" class="quantity-btn" onclick="changeQuantity(event, '${item.id}', 1)">+</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                inventoryListContainer.appendChild(itemEl);
             });
         }
 
@@ -1006,13 +993,8 @@
             let neueAnzahl = item.anzahl + change;
             
             if (neueAnzahl <= 0) {
-                const shouldDelete = await showConfirmModal(
-                    `"${item.bezeichnung}" ist aufgebraucht. Möchtest du es aus der Datenbank löschen?`,
-                    "Ja, löschen", 
-                    "Nein, auf 0 setzen"
-                );
-                
-                if(shouldDelete) {
+                const confirmed = await showConfirmModal(`"${item.bezeichnung}" ist aufgebraucht. Aus der Datenbank löschen?`, "Ja, löschen", "Nur Menge auf 0 setzen");
+                if(confirmed) {
                     await deleteItem(itemId);
                 } else {
                     await updateItemQuantity(itemId, 0);
@@ -1042,7 +1024,57 @@
             }
         }
 
-        // Such-Logik
+        function renderInventoryList(itemsToRender) {
+            inventoryListContainer.innerHTML = '';
+            
+            if (itemsToRender.length === 0) {
+                inventoryListContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📦</div>
+                        <h3>Keine Bauteile gefunden</h3>
+                        <p>Dein Lager ist leer oder die Suche ergab keine Treffer.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            itemsToRender.forEach(item => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'inventory-item';
+                
+                itemEl.onclick = () => openEditModal(item);
+                
+                let imageHtml = item.fotoDaten 
+                    ? `<img src="${item.fotoDaten}" class="item-image" alt="${item.bezeichnung}">`
+                    : `<div class="item-image">🔧</div>`;
+                
+                const catHtml = item.kategorie ? `<span class="category-badge">${item.kategorie}</span>` : '';
+                const priceHtml = item.preis ? `<p class="item-price">${item.preis.toFixed(2)} €</p>` : '<div></div>';
+                const descHtml = item.beschreibung ? `<p class="item-description">${item.beschreibung}</p>` : '';
+
+                itemEl.innerHTML = `
+                    ${imageHtml}
+                    <div class="item-details">
+                        <div class="item-header">
+                            <h3 class="item-title">${item.bezeichnung}</h3>
+                        </div>
+                        ${catHtml}
+                        ${descHtml}
+                        <div class="item-footer">
+                            ${priceHtml}
+                            <div class="quantity-controls" onclick="event.stopPropagation()">
+                                <button class="quantity-btn" onclick="changeQuantity(event, '${item.id}', -1)">-</button>
+                                <span class="quantity-display">${item.anzahl}</span>
+                                <button class="quantity-btn" onclick="changeQuantity(event, '${item.id}', 1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                inventoryListContainer.appendChild(itemEl);
+            });
+        }
+
         searchInput.addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase().trim();
             if (searchTerm === '') {
@@ -1050,12 +1082,88 @@
                 return;
             }
             const filteredItems = globalInventory.filter(item => {
-                const nameMatch = item.bezeichnung.toLowerCase().includes(searchTerm);
-                const descMatch = item.beschreibung && item.beschreibung.toLowerCase().includes(searchTerm);
-                return nameMatch || descMatch;
+                return item.bezeichnung.toLowerCase().includes(searchTerm) || 
+                       (item.beschreibung && item.beschreibung.toLowerCase().includes(searchTerm)) ||
+                       (item.kategorie && item.kategorie.toLowerCase().includes(searchTerm));
             });
             renderInventoryList(filteredItems);
         });
+
+        // --- Kategorie Logik ---
+        function loadCategories() {
+            if(!userId) return;
+            const colRef = collection(db, 'artifacts', appId, 'users', userId, 'kategorien');
+            onSnapshot(query(colRef), (snapshot) => {
+                const cats = [];
+                snapshot.forEach(doc => cats.push({id: doc.id, ...doc.data()}));
+                cats.sort((a, b) => a.name.localeCompare(b.name));
+                globalCategories = cats;
+                
+                renderCategoryList();
+                updateCategoryDropdowns();
+            }, err => console.error("Fehler beim Laden der Kategorien:", err));
+        }
+
+        function renderCategoryList() {
+            const container = document.getElementById('categoryList');
+            container.innerHTML = '';
+            if(globalCategories.length === 0) {
+                container.innerHTML = `<div class="empty-state" style="padding: 1.5rem;">Keine Kategorien vorhanden.</div>`;
+                return;
+            }
+            globalCategories.forEach(cat => {
+                const el = document.createElement('div');
+                el.className = 'inventory-item';
+                el.style.alignItems = 'center';
+                el.style.padding = '0.75rem 1rem';
+                el.innerHTML = `
+                    <div style="flex:1; font-weight: 600;">${cat.name}</div>
+                    <button type="button" class="btn-remove-image" style="position: static; box-shadow: none; background: transparent; border: 1px solid var(--error); color: var(--error);" onclick="deleteCategory('${cat.id}', '${cat.name}')">×</button>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        function updateCategoryDropdowns() {
+            const selects = [document.getElementById('kategorie'), document.getElementById('editKategorie')];
+            selects.forEach(sel => {
+                const currentVal = sel.value;
+                sel.innerHTML = '<option value="">Keine Kategorie</option>';
+                globalCategories.forEach(cat => {
+                    const opt = document.createElement('option');
+                    opt.value = cat.name;
+                    opt.textContent = cat.name;
+                    sel.appendChild(opt);
+                });
+                sel.value = currentVal; 
+            });
+        }
+
+        window.addCategory = async function() {
+            const input = document.getElementById('newCategoryName');
+            const name = input.value.trim();
+            if(!name || !userId) return;
+            
+            try {
+                const colRef = collection(db, 'artifacts', appId, 'users', userId, 'kategorien');
+                await addDoc(colRef, { name, angelegtAm: new Date().toISOString() });
+                input.value = '';
+            } catch (e) {
+                console.error("Fehler beim Anlegen der Kategorie", e);
+            }
+        };
+
+        window.deleteCategory = async function(id, name) {
+            const confirmed = await showConfirmModal(`Kategorie "${name}" wirklich löschen? (Bauteile behalten den Namen vorerst als Text)`, "Ja, löschen", "Abbrechen");
+            if(confirmed) {
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'kategorien', id));
+                } catch (e) {
+                    console.error("Fehler beim Löschen der Kategorie", e);
+                }
+            }
+        };
+
 
         // --- Modal Logik (Bearbeiten & Löschen) ---
         const modal = document.getElementById('editModal');
@@ -1065,6 +1173,7 @@
         window.openEditModal = function(item) {
             document.getElementById('editItemId').value = item.id;
             document.getElementById('editBezeichnung').value = item.bezeichnung;
+            document.getElementById('editKategorie').value = item.kategorie || '';
             document.getElementById('editPreis').value = item.preis || '';
             document.getElementById('editAnzahl').value = item.anzahl;
             document.getElementById('editBeschreibung').value = item.beschreibung || '';
@@ -1116,13 +1225,8 @@
             const itemId = document.getElementById('editItemId').value;
             const itemName = document.getElementById('editBezeichnung').value;
             
-            const shouldDelete = await showConfirmModal(
-                `Möchtest du das Bauteil "${itemName}" wirklich komplett löschen?`,
-                "Ja, unwiderruflich löschen",
-                "Abbrechen"
-            );
-            
-            if(shouldDelete) {
+            const confirmed = await showConfirmModal(`Möchtest du das Bauteil "${itemName}" wirklich komplett aus der Datenbank löschen?`);
+            if(confirmed) {
                 await deleteItem(itemId);
             }
         });
@@ -1144,6 +1248,7 @@
             
             const updatedData = {
                 bezeichnung: document.getElementById('editBezeichnung').value,
+                kategorie: document.getElementById('editKategorie').value,
                 preis: preisWert ? parseFloat(preisWert) : null,
                 anzahl: sichereMenge,
                 beschreibung: document.getElementById('editBeschreibung').value,
@@ -1169,18 +1274,10 @@
             element.textContent = text;
             element.className = `alert ${type}`;
             element.style.display = "block";
-            
             if(type === 'success') {
-                setTimeout(() => { 
-                    element.style.display = 'none'; 
-                }, 3000);
+                setTimeout(() => { element.style.display = 'none'; }, 3000);
             }
         }
-        
-        const style = document.createElement('style');
-        style.textContent = `@keyframes spin { 100% { transform: rotate(360deg); } }`;
-        document.head.appendChild(style);
-
     </script>
 </body>
 </html>
