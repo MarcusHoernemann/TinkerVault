@@ -972,7 +972,20 @@
                 }
             }, (error) => {
                 console.error("Fehler beim Laden des Bestands:", error);
-                inventoryListContainer.innerHTML = `<div class="empty-state">Fehler beim Laden der Daten.<br>${error.message}</div>`;
+                if (error.code === 'permission-denied') {
+                    inventoryListContainer.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🔒</div>
+                            <h3>Keine Berechtigung (Firebase Rules)</h3>
+                            <p style="margin-top:0.5rem; font-size:0.85rem; color:var(--text-light);">
+                                Die Firestore-Sicherheitsregeln in der Firebase Console blockieren den Zugriff.<br><br>
+                                Bitte stelle unter <b>Firestore Database &rarr; Rules</b> sicher, dass <code>allow read, write: if request.auth != null;</code> gesetzt und veröffentlicht ist.
+                            </p>
+                        </div>
+                    `;
+                } else {
+                    inventoryListContainer.innerHTML = `<div class="empty-state">Fehler beim Laden der Daten.<br>${error.message}</div>`;
+                }
             });
         }
 
@@ -1082,6 +1095,14 @@
                 
                 renderCategoryList();
                 updateCategoryDropdowns();
+            }, (error) => {
+                console.error("Fehler beim Laden der Kategorien:", error);
+                if (error.code === 'permission-denied') {
+                    const container = document.getElementById('categoryList');
+                    if (container) {
+                        container.innerHTML = `<div class="empty-state" style="padding: 1.5rem;">🔒 Keine Berechtigung für Kategorien. Bitte Firestore Rules anpassen.</div>`;
+                    }
+                }
             });
         }
 
