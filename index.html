@@ -7,10 +7,11 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#111827">
+    <link rel="apple-touch-icon" href="logo.png">
     <title>TinkerVault</title>
 
     <style>
-        /* Dark Mode Farbpalette und Variablen */
         :root { 
             --primary: #6366f1; /* Indigo für Dark Mode */
             --primary-hover: #4f46e5;
@@ -25,7 +26,6 @@
             --radius: 12px;
         }
 
-        /* Basis-Reset und Typografie */
         body { 
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
             background-color: var(--bg); 
@@ -37,7 +37,6 @@
             justify-content: center;
         }
 
-        /* App-Container zentriert */
         .app-container { 
             width: 100%;
             max-width: 600px; /* Perfekt für mobile und Tablet Ansicht */
@@ -47,7 +46,6 @@
             flex-direction: column;
         }
 
-        /* Header-Bereich */
         .app-header {
             background-color: var(--surface);
             padding: 1.5rem;
@@ -65,7 +63,6 @@
             color: var(--text);
         }
 
-        /* Tab-Navigation */
         .tabs {
             display: flex;
             background-color: var(--surface);
@@ -95,7 +92,6 @@
             background-color: var(--surface-hover);
         }
 
-        /* Tab Inhalte */
         .tab-content {
             display: none;
             padding: 1.5rem;
@@ -107,7 +103,6 @@
             display: block;
         }
 
-        /* Formular-Bereich */
         .form-group { 
             margin-bottom: 1.5rem; 
         }
@@ -120,7 +115,6 @@
             font-size: 0.9rem;
         }
 
-        /* Eingabefelder einheitlich stylen (Dark Mode) */
         input[type="text"], 
         input[type="number"], 
         textarea, 
@@ -132,18 +126,16 @@
             border-radius: 8px; 
             box-sizing: border-box; 
             font-size: 16px; /* Wichtig: 16px verhindert Auto-Zoom auf iOS! */
-            background-color: rgba(0,0,0,0.2); /* Sehr dunkles Eingabefeld */
+            background-color: rgba(0,0,0,0.2); 
             color: var(--text);
             transition: border-color 0.2s, box-shadow 0.2s;
             font-family: inherit;
         }
 
-        /* Platzhalter Farbe anpassen */
         ::placeholder {
             color: #6b7280;
         }
 
-        /* Fokus-Zustand für gute Accessibility */
         input:focus, textarea:focus, select:focus {
             outline: none;
             border-color: var(--primary);
@@ -161,7 +153,6 @@
             min-height: 100px;
         }
 
-        /* Custom File Input */
         input[type="file"] {
             padding: 0.5rem;
             background-color: rgba(0,0,0,0.2);
@@ -184,7 +175,6 @@
             background: #4b5563;
         }
 
-        /* Optischer Hinweis, dass Foto optional ist */
         .optional-label {
             font-size: 0.75rem;
             color: var(--text-light);
@@ -193,7 +183,6 @@
             font-style: italic;
         }
 
-        /* Button Styling */
         .btn-primary { 
             width: 100%; 
             padding: 1rem; 
@@ -217,7 +206,6 @@
             transform: none;
         }
         
-        /* Outline Button (z.B. für Abbrechen) */
         .btn-outline {
             width: 100%; 
             padding: 1rem; 
@@ -233,7 +221,6 @@
         }
         .btn-outline:hover { background-color: var(--surface-hover); }
 
-        /* Vorschau-Bild */
         .image-preview-container {
             margin-top: 1rem;
             display: none; 
@@ -252,7 +239,6 @@
             display: block;
         }
         
-        /* Button zum Entfernen des Bildes */
         .btn-remove-image {
             position: absolute;
             top: 0.5rem;
@@ -272,7 +258,6 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
-        /* Statusmeldungen */
         .alert { 
             padding: 1rem; 
             margin-bottom: 1.5rem; 
@@ -293,7 +278,6 @@
             border: 1px solid rgba(239, 68, 68, 0.2); 
         }
 
-        /* Grid für Layouts */
         .row-group {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -318,8 +302,6 @@
             }
         }
 
-        /* --- Styles für die Bestandsliste --- */
-        
         .search-container {
             margin-bottom: 1.5rem;
             position: sticky;
@@ -333,7 +315,6 @@
             position: relative;
         }
         
-        /* Such-Icon (simuliert) */
         .search-input-wrapper::before {
             content: "🔍";
             position: absolute;
@@ -362,7 +343,7 @@
             display: flex;
             gap: 1rem;
             transition: transform 0.2s, box-shadow 0.2s;
-            cursor: pointer; /* Zeigt an, dass das Item klickbar ist */
+            cursor: pointer;
         }
         
         .inventory-item:hover {
@@ -388,7 +369,7 @@
 
         .item-details {
             flex: 1;
-            min-width: 0; /* Wichtig, damit Text-Truncation in Flexbox funktioniert */
+            min-width: 0; 
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -430,14 +411,16 @@
             margin-top: auto;
         }
 
-        .item-price {
+        .item-lagerplatz {
             font-size: 0.9rem;
-            color: #34d399; /* Success grün für Geld */
+            color: var(--primary); /* Modifiziert für Lagerplatz anstatt Geld */
             font-weight: 500;
             margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
         
-        /* Schnelle Mengenänderung in der Liste */
         .quantity-controls {
             display: flex;
             align-items: center;
@@ -498,7 +481,6 @@
             color: var(--text-light);
         }
         
-        /* --- Modal (Popup) Styles für Bearbeitung/Löschen/Confirm --- */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -585,7 +567,6 @@
             <h1>TinkerVault</h1>
         </header>
         
-        <!-- Tab Navigation -->
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('listTab', this)">Übersicht</button>
             <button class="tab-btn" onclick="switchTab('addTab', this)">Neu Erfassen</button>
@@ -624,8 +605,8 @@
                 
                 <div class="row-group">
                     <div class="form-group">
-                        <label for="preis">Einzelpreis (€) <span class="optional-label">optional</span></label>
-                        <input type="number" id="preis" step="0.01" min="0" placeholder="0.00">
+                        <label for="lagerplatz">Lagerplatz <span class="optional-label">optional</span></label>
+                        <input type="text" id="lagerplatz" placeholder="z.B. Regal A, Box 3">
                     </div>
                     
                     <div class="form-group">
@@ -636,7 +617,7 @@
                 
                 <div class="form-group">
                     <label for="beschreibung">Beschreibung <span class="optional-label">optional</span></label>
-                    <textarea id="beschreibung" placeholder="Spezifikationen, Lagerort (Regal 3, Kiste A)..."></textarea>
+                    <textarea id="beschreibung" placeholder="Spezifikationen, Notizen, Datenblatt-Links..."></textarea>
                 </div>
                 
                 <div class="form-group">
@@ -698,8 +679,8 @@
                 
                 <div class="row-group">
                     <div class="form-group">
-                        <label for="editPreis">Einzelpreis (€) <span class="optional-label">optional</span></label>
-                        <input type="number" id="editPreis" step="0.01" min="0">
+                        <label for="editLagerplatz">Lagerplatz <span class="optional-label">optional</span></label>
+                        <input type="text" id="editLagerplatz">
                     </div>
                     
                     <div class="form-group">
@@ -731,7 +712,7 @@
         </div>
     </div>
 
-    <!-- Modal: Eigene Confirm Dialog Box (ersetzt window.confirm) -->
+    <!-- Modal: Eigene Confirm Dialog Box -->
     <div id="confirmModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 400px; text-align: center;">
             <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
@@ -742,6 +723,52 @@
             </div>
         </div>
     </div>
+
+    <!-- PWA Setup: Inline Manifest & Service Worker -->
+    <script>
+        (function() {
+            // 1. Manifest dynamisch erzeugen (um alles in einer Datei zu halten)
+            const manifest = {
+                name: "TinkerVault",
+                short_name: "TinkerVault",
+                start_url: "./",
+                display: "standalone",
+                background_color: "#111827",
+                theme_color: "#111827",
+                icons: [
+                    {
+                        src: "logo.png",
+                        sizes: "500x500",
+                        type: "image/png",
+                        purpose: "any maskable"
+                    }
+                ]
+            };
+            
+            const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+            const manifestUrl = URL.createObjectURL(manifestBlob);
+            const manifestLink = document.createElement('link');
+            manifestLink.rel = 'manifest';
+            manifestLink.href = manifestUrl;
+            document.head.appendChild(manifestLink);
+
+            // 2. Service Worker (Deaktiviert in dieser Einzeldatei-Ansicht)
+            // HINWEIS: Moderne Browser blockieren aus Sicherheitsgründen die Registrierung 
+            // von Service Workern über "blob:" oder "data:" URLs. 
+            // Wenn du diese App auf deinem eigenen Webspace hostest, erstelle eine 
+            // separate Datei namens "sw.js" und entkommentiere den folgenden Code:
+            
+            /*
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('./sw.js')
+                        .then(reg => console.log('✅ PWA ServiceWorker erfolgreich registriert.'))
+                        .catch(err => console.error('❌ ServiceWorker Registrierung fehlgeschlagen:', err));
+                });
+            }
+            */
+        })();
+    </script>
 
     <!-- Firebase SDK Setup -->
     <script type="module">
@@ -760,16 +787,28 @@
             }
         }
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+        const isFirebaseConfigured = firebaseConfig && firebaseConfig.projectId;
+        let app, db, auth;
+        
+        if (isFirebaseConfigured) {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+        }
         
         let userId = null;
         let globalInventory = []; 
         let globalCategories = []; 
 
-        // Authentifizierung
         async function initAuth() {
+            if (!isFirebaseConfigured) {
+                console.log("Kein Firebase-Projekt gefunden. Wechsle in den lokalen Offline-Modus (LocalStorage).");
+                userId = "local_user";
+                loadInventory();
+                loadCategories();
+                return;
+            }
+
             try {
                 if (typeof __initial_auth_token !== 'undefined') {
                     const { signInWithCustomToken } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
@@ -907,14 +946,14 @@
             submitBtn.innerHTML = 'Speichere...';
             msg.style.display = 'none';
 
-            const preisWert = document.getElementById('preis').value;
+            const lagerplatzWert = document.getElementById('lagerplatz').value.trim();
             const menge = parseInt(document.getElementById('anzahl').value, 10);
             const sichereMenge = isNaN(menge) || menge < 1 ? 1 : menge;
             
             const neuesBauteil = {
                 bezeichnung: document.getElementById('bezeichnung').value,
                 kategorie: document.getElementById('kategorie').value,
-                preis: preisWert ? parseFloat(preisWert) : null,
+                lagerplatz: lagerplatzWert,
                 anzahl: sichereMenge,
                 beschreibung: document.getElementById('beschreibung').value,
                 fotoDaten: base64Foto, 
@@ -922,8 +961,16 @@
             };
 
             try {
-                const collectionRef = collection(db, 'artifacts', appId, 'users', userId, 'bestand');
-                await addDoc(collectionRef, neuesBauteil);
+                if (isFirebaseConfigured) {
+                    const collectionRef = collection(db, 'artifacts', appId, 'users', userId, 'bestand');
+                    await addDoc(collectionRef, neuesBauteil);
+                } else {
+                    neuesBauteil.id = Date.now().toString();
+                    const localData = JSON.parse(localStorage.getItem('tinkervault_bestand') || '[]');
+                    localData.push(neuesBauteil);
+                    localStorage.setItem('tinkervault_bestand', JSON.stringify(localData));
+                    loadInventory(); // Liste manuell aktualisieren
+                }
 
                 showMessage(msg, "✅ Bauteil erfolgreich gespeichert!", "success");
                 
@@ -952,6 +999,26 @@
         function loadInventory() {
             if(!userId) return;
             
+            if (!isFirebaseConfigured) {
+                const localData = JSON.parse(localStorage.getItem('tinkervault_bestand') || '[]');
+                localData.sort((a, b) => new Date(b.angelegtAm) - new Date(a.angelegtAm));
+                globalInventory = localData;
+                
+                const currentSearch = searchInput.value.toLowerCase().trim();
+                if(currentSearch) {
+                    const filtered = globalInventory.filter(item => 
+                        item.bezeichnung.toLowerCase().includes(currentSearch) || 
+                        (item.beschreibung && item.beschreibung.toLowerCase().includes(currentSearch)) ||
+                        (item.kategorie && item.kategorie.toLowerCase().includes(currentSearch)) ||
+                        (item.lagerplatz && item.lagerplatz.toLowerCase().includes(currentSearch))
+                    );
+                    renderInventoryList(filtered);
+                } else {
+                    renderInventoryList(globalInventory);
+                }
+                return;
+            }
+
             const collectionRef = collection(db, 'artifacts', appId, 'users', userId, 'bestand');
             const q = query(collectionRef);
             
@@ -969,7 +1036,8 @@
                     const filtered = globalInventory.filter(item => 
                         item.bezeichnung.toLowerCase().includes(currentSearch) || 
                         (item.beschreibung && item.beschreibung.toLowerCase().includes(currentSearch)) ||
-                        (item.kategorie && item.kategorie.toLowerCase().includes(currentSearch))
+                        (item.kategorie && item.kategorie.toLowerCase().includes(currentSearch)) ||
+                        (item.lagerplatz && item.lagerplatz.toLowerCase().includes(currentSearch))
                     );
                     renderInventoryList(filtered);
                 } else {
@@ -1007,8 +1075,18 @@
         
         async function updateItemQuantity(itemId, newQuantity) {
             try {
-                const itemRef = doc(db, 'artifacts', appId, 'users', userId, 'bestand', itemId);
-                await updateDoc(itemRef, { anzahl: newQuantity });
+                if (isFirebaseConfigured) {
+                    const itemRef = doc(db, 'artifacts', appId, 'users', userId, 'bestand', itemId);
+                    await updateDoc(itemRef, { anzahl: newQuantity });
+                } else {
+                    let localData = JSON.parse(localStorage.getItem('tinkervault_bestand') || '[]');
+                    const index = localData.findIndex(i => i.id === itemId);
+                    if (index !== -1) {
+                        localData[index].anzahl = newQuantity;
+                        localStorage.setItem('tinkervault_bestand', JSON.stringify(localData));
+                        loadInventory();
+                    }
+                }
             } catch (error) {
                 console.error("Fehler beim Aktualisieren der Menge:", error);
             }
@@ -1016,8 +1094,15 @@
         
         async function deleteItem(itemId) {
             try {
-                const itemRef = doc(db, 'artifacts', appId, 'users', userId, 'bestand', itemId);
-                await deleteDoc(itemRef);
+                if (isFirebaseConfigured) {
+                    const itemRef = doc(db, 'artifacts', appId, 'users', userId, 'bestand', itemId);
+                    await deleteDoc(itemRef);
+                } else {
+                    let localData = JSON.parse(localStorage.getItem('tinkervault_bestand') || '[]');
+                    localData = localData.filter(i => i.id !== itemId);
+                    localStorage.setItem('tinkervault_bestand', JSON.stringify(localData));
+                    loadInventory();
+                }
                 closeModal(); 
             } catch (error) {
                 console.error("Fehler beim Löschen:", error);
@@ -1049,7 +1134,7 @@
                     : `<div class="item-image">🔧</div>`;
                 
                 const catHtml = item.kategorie ? `<span class="category-badge">${item.kategorie}</span>` : '';
-                const priceHtml = item.preis ? `<p class="item-price">${item.preis.toFixed(2)} €</p>` : '<div></div>';
+                const lagerplatzHtml = item.lagerplatz ? `<p class="item-lagerplatz">🗄️ ${item.lagerplatz}</p>` : '<div></div>';
                 const descHtml = item.beschreibung ? `<p class="item-description">${item.beschreibung}</p>` : '';
 
                 itemEl.innerHTML = `
@@ -1061,7 +1146,7 @@
                         ${catHtml}
                         ${descHtml}
                         <div class="item-footer">
-                            ${priceHtml}
+                            ${lagerplatzHtml}
                             <div class="quantity-controls" onclick="event.stopPropagation()">
                                 <button class="quantity-btn" onclick="changeQuantity(event, '${item.id}', -1)">-</button>
                                 <span class="quantity-display">${item.anzahl}</span>
@@ -1084,7 +1169,8 @@
             const filteredItems = globalInventory.filter(item => {
                 return item.bezeichnung.toLowerCase().includes(searchTerm) || 
                        (item.beschreibung && item.beschreibung.toLowerCase().includes(searchTerm)) ||
-                       (item.kategorie && item.kategorie.toLowerCase().includes(searchTerm));
+                       (item.kategorie && item.kategorie.toLowerCase().includes(searchTerm)) ||
+                       (item.lagerplatz && item.lagerplatz.toLowerCase().includes(searchTerm));
             });
             renderInventoryList(filteredItems);
         });
@@ -1092,6 +1178,16 @@
         // --- Kategorie Logik ---
         function loadCategories() {
             if(!userId) return;
+            
+            if (!isFirebaseConfigured) {
+                const localCats = JSON.parse(localStorage.getItem('tinkervault_kategorien') || '[]');
+                localCats.sort((a, b) => a.name.localeCompare(b.name));
+                globalCategories = localCats;
+                renderCategoryList();
+                updateCategoryDropdowns();
+                return;
+            }
+
             const colRef = collection(db, 'artifacts', appId, 'users', userId, 'kategorien');
             onSnapshot(query(colRef), (snapshot) => {
                 const cats = [];
@@ -1145,8 +1241,15 @@
             if(!name || !userId) return;
             
             try {
-                const colRef = collection(db, 'artifacts', appId, 'users', userId, 'kategorien');
-                await addDoc(colRef, { name, angelegtAm: new Date().toISOString() });
+                if (isFirebaseConfigured) {
+                    const colRef = collection(db, 'artifacts', appId, 'users', userId, 'kategorien');
+                    await addDoc(colRef, { name, angelegtAm: new Date().toISOString() });
+                } else {
+                    const localCats = JSON.parse(localStorage.getItem('tinkervault_kategorien') || '[]');
+                    localCats.push({ id: Date.now().toString(), name, angelegtAm: new Date().toISOString() });
+                    localStorage.setItem('tinkervault_kategorien', JSON.stringify(localCats));
+                    loadCategories();
+                }
                 input.value = '';
             } catch (e) {
                 console.error("Fehler beim Anlegen der Kategorie", e);
@@ -1157,13 +1260,19 @@
             const confirmed = await showConfirmModal(`Kategorie "${name}" wirklich löschen? (Bauteile behalten den Namen vorerst als Text)`, "Ja, löschen", "Abbrechen");
             if(confirmed) {
                 try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'kategorien', id));
+                    if (isFirebaseConfigured) {
+                        await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'kategorien', id));
+                    } else {
+                        let localCats = JSON.parse(localStorage.getItem('tinkervault_kategorien') || '[]');
+                        localCats = localCats.filter(c => c.id !== id);
+                        localStorage.setItem('tinkervault_kategorien', JSON.stringify(localCats));
+                        loadCategories();
+                    }
                 } catch (e) {
                     console.error("Fehler beim Löschen der Kategorie", e);
                 }
             }
         };
-
 
         // --- Modal Logik (Bearbeiten & Löschen) ---
         const modal = document.getElementById('editModal');
@@ -1174,7 +1283,7 @@
             document.getElementById('editItemId').value = item.id;
             document.getElementById('editBezeichnung').value = item.bezeichnung;
             document.getElementById('editKategorie').value = item.kategorie || '';
-            document.getElementById('editPreis').value = item.preis || '';
+            document.getElementById('editLagerplatz').value = item.lagerplatz || '';
             document.getElementById('editAnzahl').value = item.anzahl;
             document.getElementById('editBeschreibung').value = item.beschreibung || '';
             
@@ -1242,22 +1351,32 @@
             btn.innerHTML = 'Speichere...';
             
             const itemId = document.getElementById('editItemId').value;
-            const preisWert = document.getElementById('editPreis').value;
+            const lagerplatzWert = document.getElementById('editLagerplatz').value.trim();
             const menge = parseInt(document.getElementById('editAnzahl').value, 10);
             const sichereMenge = isNaN(menge) || menge < 0 ? 0 : menge;
             
             const updatedData = {
                 bezeichnung: document.getElementById('editBezeichnung').value,
                 kategorie: document.getElementById('editKategorie').value,
-                preis: preisWert ? parseFloat(preisWert) : null,
+                lagerplatz: lagerplatzWert,
                 anzahl: sichereMenge,
                 beschreibung: document.getElementById('editBeschreibung').value,
                 fotoDaten: editBase64Foto
             };
             
             try {
-                const itemRef = doc(db, 'artifacts', appId, 'users', userId, 'bestand', itemId);
-                await updateDoc(itemRef, updatedData);
+                if (isFirebaseConfigured) {
+                    const itemRef = doc(db, 'artifacts', appId, 'users', userId, 'bestand', itemId);
+                    await updateDoc(itemRef, updatedData);
+                } else {
+                    let localData = JSON.parse(localStorage.getItem('tinkervault_bestand') || '[]');
+                    const index = localData.findIndex(i => i.id === itemId);
+                    if (index !== -1) {
+                        localData[index] = { ...localData[index], ...updatedData };
+                        localStorage.setItem('tinkervault_bestand', JSON.stringify(localData));
+                        loadInventory();
+                    }
+                }
                 
                 showMessage(msg, "✅ Änderungen gespeichert!", "success");
                 setTimeout(closeModal, 1000);
