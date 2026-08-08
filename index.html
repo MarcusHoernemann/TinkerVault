@@ -9,6 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#111827">
     <link rel="apple-touch-icon" href="logo.png">
+    <link rel="manifest" href="manifest.json">
     <title>TinkerVault</title>
 
     <style>
@@ -724,50 +725,19 @@
         </div>
     </div>
 
-    <!-- PWA Setup: Inline Manifest & Service Worker -->
+    <!-- PWA Setup: Externe Manifest & Service Worker Registrierung -->
     <script>
-        (function() {
-            // 1. Manifest dynamisch erzeugen (um alles in einer Datei zu halten)
-            const manifest = {
-                name: "TinkerVault",
-                short_name: "TinkerVault",
-                start_url: "./",
-                display: "standalone",
-                background_color: "#111827",
-                theme_color: "#111827",
-                icons: [
-                    {
-                        src: "logo.png",
-                        sizes: "500x500",
-                        type: "image/png",
-                        purpose: "any maskable"
-                    }
-                ]
-            };
-            
-            const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
-            const manifestUrl = URL.createObjectURL(manifestBlob);
-            const manifestLink = document.createElement('link');
-            manifestLink.rel = 'manifest';
-            manifestLink.href = manifestUrl;
-            document.head.appendChild(manifestLink);
-
-            // 2. Service Worker (Deaktiviert in dieser Einzeldatei-Ansicht)
-            // HINWEIS: Moderne Browser blockieren aus Sicherheitsgründen die Registrierung 
-            // von Service Workern über "blob:" oder "data:" URLs. 
-            // Wenn du diese App auf deinem eigenen Webspace hostest, erstelle eine 
-            // separate Datei namens "sw.js" und entkommentiere den folgenden Code:
-            
-            /*
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('./sw.js')
-                        .then(reg => console.log('✅ PWA ServiceWorker erfolgreich registriert.'))
-                        .catch(err => console.error('❌ ServiceWorker Registrierung fehlgeschlagen:', err));
-                });
-            }
-            */
-        })();
+        // Service Worker nur registrieren, wenn wir über HTTP/HTTPS geladen wurden
+        // Verhindert Fehler in lokalen oder isolierten Sandbox-Umgebungen (wie blob: oder file:)
+        if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.protocol === 'http:')) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('✅ PWA ServiceWorker erfolgreich registriert.'))
+                    .catch(err => console.error('❌ ServiceWorker Registrierung fehlgeschlagen:', err));
+            });
+        } else {
+            console.log('ℹ️ PWA ServiceWorker Registrierung übersprungen (läuft in Sandbox/lokal). Auf GitHub Pages wird er aktiv!');
+        }
     </script>
 
     <!-- Firebase SDK Setup -->
