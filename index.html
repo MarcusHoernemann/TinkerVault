@@ -39,36 +39,6 @@
             justify-content: center;
         }
 
-        /* --- Auth / Login Overlay --- */
-        #authOverlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: var(--bg);
-            z-index: 1000;
-            display: flex; /* Flex, um es sichtbar zu machen. Wird per JS ausgeblendet */
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-            box-sizing: border-box;
-        }
-
-        .auth-box {
-            background-color: var(--surface);
-            padding: 2rem;
-            border-radius: 12px;
-            width: 100%;
-            max-width: 400px;
-            border: 1px solid var(--border);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            text-align: center;
-        }
-
-        .auth-box h2 {
-            margin-top: 0;
-            margin-bottom: 1.5rem;
-            color: var(--text);
-        }
-
         /* App-Container zentriert */
         .app-container { 
             width: 100%;
@@ -99,20 +69,6 @@
             font-weight: 700;
             color: var(--text);
             flex-grow: 1;
-        }
-        
-        .logout-btn {
-            background: none;
-            border: 1px solid var(--border);
-            color: var(--text-light);
-            padding: 0.5rem 0.75rem;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
-        .logout-btn:hover {
-            background-color: var(--surface-hover);
-            color: var(--text);
         }
 
         /* Tab-Navigation */
@@ -612,32 +568,9 @@
     </style>
 </head>
 <body>
-    <!-- Login Overlay -->
-    <div id="authOverlay">
-        <div class="auth-box">
-            <h2>TinkerVault Login</h2>
-            <div id="authMessage" class="alert"></div>
-            
-            <form id="loginForm">
-                <div class="form-group">
-                    <label for="authEmail">E-Mail Adresse</label>
-                    <input type="email" id="authEmail" required placeholder="deine@email.de">
-                </div>
-                <div class="form-group">
-                    <label for="authPassword">Passwort (min. 6 Zeichen)</label>
-                    <input type="password" id="authPassword" required placeholder="••••••••">
-                </div>
-                
-                <button type="submit" class="btn-primary" id="loginBtn">Einloggen</button>
-                <button type="button" class="btn-outline" id="registerBtn">Neuen Account erstellen</button>
-            </form>
-        </div>
-    </div>
-
     <div class="app-container">
         <header class="app-header">
             <h1>TinkerVault</h1>
-            <button class="logout-btn" id="logoutBtn" style="display:none;">Logout</button>
         </header>
         
         <div class="tabs">
@@ -717,8 +650,21 @@
             </div>
             
             <h3 style="margin-top: 2rem; font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Meine Kategorien</h3>
-            <div id="categoryList" class="inventory-list" style="margin-top: 1rem;">
+            <div id="categoryList" class="inventory-list" style="margin-top: 1rem; margin-bottom: 2rem;">
                 <div class="loading-spinner">Lade Kategorien...</div>
+            </div>
+            
+            <!-- Neuer Sync Bereich für GitHub Pages -->
+            <div style="background-color: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border);">
+                <h3 style="margin-top: 0; font-size: 1.1rem;">Geräte synchronisieren</h3>
+                <p style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 1rem;">
+                    Kopiere diesen Code von deinem Hauptgerät (z.B. PC) auf dein Smartphone, um auf GitHub Pages denselben Bestand zu sehen.
+                </p>
+                <div id="syncMessage" class="alert"></div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="syncCodeInput" placeholder="Lade Code...">
+                    <button type="button" class="btn-outline" style="margin-top: 0; width: auto;" onclick="applySyncCode()">Verbinden</button>
+                </div>
             </div>
         </div>
     </div>
@@ -808,8 +754,7 @@
     <!-- Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
-        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -823,69 +768,49 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
         const db = getFirestore(app);
         const auth = getAuth(app);
         
-        const appId = 'tinkervault-app';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'tinkervault-app';
         let userId = null;
         let globalInventory = []; 
         let globalCategories = []; 
         
-        // --- Auth Logik (E-Mail/Passwort) ---
-        const authOverlay = document.getElementById('authOverlay');
-        const authMsg = document.getElementById('authMessage');
-        const logoutBtn = document.getElementById('logoutBtn');
-
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                // User ist eingeloggt
-                authOverlay.style.display = 'none';
-                logoutBtn.style.display = 'block';
-                userId = user.uid;
+        async function initAuth() {
+            try {
+                // Nur noch den anonymen Login verwenden (ohne das Token der Sandbox)
+                await signInAnonymously(auth);
                 
-                // Sobald wir die ID haben, laden wir die Daten!
+                // Für GitHub Pages: Erlaube es dem Nutzer, eine ID von einem anderen Gerät zu übernehmen
+                const savedSyncId = localStorage.getItem('tinkervault_sync_id');
+                userId = savedSyncId || auth.currentUser.uid;
+                
+                // Sync Code in das UI eintragen
+                const syncInput = document.getElementById('syncCodeInput');
+                if (syncInput) syncInput.value = userId;
+                
                 loadInventory(); 
                 loadCategories(); 
-            } else {
-                // Niemand ist eingeloggt -> zeige Login Overlay
-                authOverlay.style.display = 'flex';
-                logoutBtn.style.display = 'none';
-                userId = null;
-                document.getElementById('inventoryList').innerHTML = '<div class="loading-spinner">Bitte einloggen...</div>';
-            }
-        });
-
-        document.getElementById('loginBtn').addEventListener('click', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('authEmail').value;
-            const password = document.getElementById('authPassword').value;
-            if(!email || !password) return showMessage(authMsg, "Bitte alles ausfüllen", "error");
-            
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-                // Overlay verschwindet automatisch durch onAuthStateChanged
             } catch (error) {
-                showMessage(authMsg, "Login fehlgeschlagen: " + error.message, "error");
+                console.error("Auth Fehler:", error);
+                document.getElementById('inventoryList').innerHTML = `<div class="empty-state">Verbindungsfehler.<br>${error.message}</div>`;
             }
-        });
+        }
+        
+        initAuth();
 
-        document.getElementById('registerBtn').addEventListener('click', async () => {
-            const email = document.getElementById('authEmail').value;
-            const password = document.getElementById('authPassword').value;
-            if(!email || !password) return showMessage(authMsg, "Bitte alles ausfüllen", "error");
-            
-            try {
-                await createUserWithEmailAndPassword(auth, email, password);
-                // Erstellt Account & loggt direkt ein
-            } catch (error) {
-                showMessage(authMsg, "Registrierung fehlgeschlagen: " + error.message, "error");
+        window.applySyncCode = function() {
+            const newCode = document.getElementById('syncCodeInput').value.trim();
+            if(newCode && newCode !== userId) {
+                localStorage.setItem('tinkervault_sync_id', newCode);
+                userId = newCode;
+                showMessage(document.getElementById('syncMessage'), "Geräte verbunden! Lade Daten...", "success");
+                loadInventory();
+                loadCategories();
+            } else if (newCode === userId) {
+                showMessage(document.getElementById('syncMessage'), "Dieser Code wird bereits verwendet.", "success");
             }
-        });
-
-        logoutBtn.addEventListener('click', () => {
-            signOut(auth);
-        });
+        };
 
         // --- Custom Confirm Box Logik ---
         function showConfirmModal(message, okText = "Löschen", cancelText = "Abbrechen") {
