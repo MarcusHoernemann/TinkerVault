@@ -564,7 +564,6 @@
         .btn-danger:hover {
             background-color: rgba(239, 68, 68, 0.1);
         }
-
     </style>
 </head>
 <body>
@@ -576,7 +575,7 @@
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('listTab', this)">Übersicht</button>
             <button class="tab-btn" onclick="switchTab('addTab', this)">Neu Erfassen</button>
-            <button class="tab-btn" onclick="switchTab('categoryTab', this)">Kategorien</button>
+            <button class="tab-btn" onclick="switchTab('categoryTab', this)">Einstellungen</button>
         </div>
         
         <div id="listTab" class="tab-content active">
@@ -641,6 +640,29 @@
         </div>
 
         <div id="categoryTab" class="tab-content">
+            <!-- Sync Bereich -->
+            <div style="background-color: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem;">
+                <h3 style="margin-top: 0; font-size: 1.1rem;">Geräte synchronisieren</h3>
+                <p style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 1rem;">
+                    Gib diesen 6-stelligen Code auf einem anderen Gerät ein, um auf denselben Bestand zuzugreifen.
+                </p>
+                
+                <!-- Code Anzeige -->
+                <div style="display: flex; align-items: center; justify-content: center; background: var(--surface); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-family: monospace; font-size: 2rem; letter-spacing: 6px; font-weight: bold; color: var(--primary);">
+                    <span id="displaySyncCode">------</span>
+                </div>
+                
+                <div id="syncMessage" class="alert"></div>
+                <div style="display: flex; gap: 0.5rem; flex-direction: column;">
+                    <label for="syncCodeInput" style="font-size: 0.85rem; margin-bottom: 0;">Code von anderem Gerät eingeben:</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="syncCodeInput" placeholder="Code..." maxlength="6" style="text-transform: uppercase; text-align: center; font-weight: bold; letter-spacing: 2px;">
+                        <button type="button" class="btn-outline" style="margin-top: 0; width: auto;" onclick="applySyncCode()">Verbinden</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kategorie Bereich -->
             <div class="form-group">
                 <label for="newCategoryName">Neue Kategorie anlegen</label>
                 <div style="display: flex; gap: 0.5rem;">
@@ -652,19 +674,6 @@
             <h3 style="margin-top: 2rem; font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Meine Kategorien</h3>
             <div id="categoryList" class="inventory-list" style="margin-top: 1rem; margin-bottom: 2rem;">
                 <div class="loading-spinner">Lade Kategorien...</div>
-            </div>
-            
-            <!-- Neuer Sync Bereich für GitHub Pages -->
-            <div style="background-color: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border);">
-                <h3 style="margin-top: 0; font-size: 1.1rem;">Geräte synchronisieren</h3>
-                <p style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 1rem;">
-                    Kopiere diesen Code von deinem Hauptgerät (z.B. PC) auf dein Smartphone, um auf GitHub Pages denselben Bestand zu sehen.
-                </p>
-                <div id="syncMessage" class="alert"></div>
-                <div style="display: flex; gap: 0.5rem;">
-                    <input type="text" id="syncCodeInput" placeholder="Lade Code...">
-                    <button type="button" class="btn-outline" style="margin-top: 0; width: auto;" onclick="applySyncCode()">Verbinden</button>
-                </div>
             </div>
         </div>
     </div>
@@ -776,18 +785,33 @@
         let globalInventory = []; 
         let globalCategories = []; 
         
+        // Generiert einen zufälligen 6-stelligen alphanumerischen Code
+        function generateShortCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = '';
+            for (let i = 0; i < 6; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
         async function initAuth() {
             try {
-                // Nur noch den anonymen Login verwenden (ohne das Token der Sandbox)
                 await signInAnonymously(auth);
                 
-                // Für GitHub Pages: Erlaube es dem Nutzer, eine ID von einem anderen Gerät zu übernehmen
-                const savedSyncId = localStorage.getItem('tinkervault_sync_id');
-                userId = savedSyncId || auth.currentUser.uid;
+                let savedSyncId = localStorage.getItem('tinkervault_sync_id');
                 
-                // Sync Code in das UI eintragen
-                const syncInput = document.getElementById('syncCodeInput');
-                if (syncInput) syncInput.value = userId;
+                // Wenn kein Code existiert oder es noch die alte, extrem lange Firebase UID ist (> 10 Zeichen), 
+                // generieren wir aus Sicherheits- und Tippgründen einen neuen 6-stelligen Code.
+                if (!savedSyncId || savedSyncId.length > 10) {
+                    savedSyncId = generateShortCode();
+                    localStorage.setItem('tinkervault_sync_id', savedSyncId);
+                }
+                userId = savedSyncId;
+                
+                // Sync Code im UI eintragen
+                const displayCode = document.getElementById('displaySyncCode');
+                if (displayCode) displayCode.textContent = userId;
                 
                 loadInventory(); 
                 loadCategories(); 
@@ -800,15 +824,30 @@
         initAuth();
 
         window.applySyncCode = function() {
-            const newCode = document.getElementById('syncCodeInput').value.trim();
+            const newCodeInput = document.getElementById('syncCodeInput');
+            const newCode = newCodeInput.value.trim().toUpperCase(); // Formatieren zur Sicherheit
+            const msgEl = document.getElementById('syncMessage');
+
             if(newCode && newCode !== userId) {
+                if (newCode.length !== 6) {
+                    showMessage(msgEl, "Der Code muss genau 6 Zeichen lang sein.", "error");
+                    return;
+                }
+                
                 localStorage.setItem('tinkervault_sync_id', newCode);
                 userId = newCode;
-                showMessage(document.getElementById('syncMessage'), "Geräte verbunden! Lade Daten...", "success");
+                
+                // Anzeige aktualisieren
+                document.getElementById('displaySyncCode').textContent = userId;
+                newCodeInput.value = ''; // Inputfeld nach Erfolg leeren
+                
+                showMessage(msgEl, "✅ Geräte erfolgreich verbunden! Lade Daten...", "success");
+                
+                // Bestandslisten und Kategorien für die neue ID laden
                 loadInventory();
                 loadCategories();
             } else if (newCode === userId) {
-                showMessage(document.getElementById('syncMessage'), "Dieser Code wird bereits verwendet.", "success");
+                showMessage(msgEl, "Dieses Gerät nutzt bereits diesen Code.", "success");
             }
         };
 
